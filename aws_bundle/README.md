@@ -1,0 +1,97 @@
+`aws_bundle` package
+====================
+
+Using `ec2-ami-tools` is a pain. This package may ease your pain.
+
+There are two conventional ways to produce an instance store AMI:
+`ec2-bundle-vol` which asks an EC2 instance to bundles itself for use as
+an AMI, and `ec2-bundle-image` which takes a disk image and bundles it for
+use as an AMI. In either case, you end up with a bunch of files on disk which
+you then pass to `ec2-upload-bundle`, which gives you a manifest URL which you
+then pass to `ec2-api-tools`' `ec2-register` or `aws-cli`'s
+`aws ec2 register-image`.
+
+This `aws_bundle` package is a pure Go alternative to `ec2-bundle-image`: give
+it a disk image, it'll produce a bundle. You can send the bundle (and the
+corresponding manifest) to S3 and register the image using the
+[normal AWS SDK](https://github.com/aws/aws-sdk-go). There's no magic.
+
+Creating an instance store image does _not_ require an X.509 signing
+certificate. (That's `ec2-ami-tools` talking.) All you need is regular AWS
+credentials with `s3:PutObject` and `ec2:RegisterImage` access.
+
+Usage
+-----
+
+The `aws_bundle` package attemps to accomodate as many use cases as possible.
+It therefore has no dependencies on the AWS SDK, and it makes no use of the
+network.
+
+Implement the `aws_bundle.Sink` interface to handle the bundle output. You can
+write the results to disk, or stream them straight to S3, or whatever you like,
+just express it as a `Sink`:
+
+```
+type Sink interface {
+	WriteBundleFile(filename string) (io.WriteCloser, error)
+}
+```
+
+To make a bundle, get an `aws_bundle.Writer`, `Write()` the raw disk image to
+it, `Close()`. Easy.
+
+`aws_bundle.NewWriter()` takes:
+   
+   * a `basename`, which determines the names of the files it produces
+   * a `size` in bytes, which is needed up front because of AWS design decisions
+   * a `sink` to which the `Writer` should write
+
+In order to use the bundle, you'll also need a manifest file. Manifests contain
+various metadata, like the name of the image, its description, its owner, etc.
+Fill out an `aws_bundle.Metadata` structure as appropriate and call
+`WriteManifest()`, providing both the closed `aws_bundle.Writer` and a `sink`.
+
+Cryptography
+------------
+
+`ec2-ami-tools` requires you to specify an X.509 certificate and private key,
+and the documentation variously states or implies that this must be an
+Amazon-registered signing certificate. This is not actually a requirement.
+
+Bundles are encrypted with AES-128-CBC using a random key and initialization
+vector. These secrets are then encrypted using EC2's RSA public key and
+included in the manifest file. When you launch an instance, EC2 retrieves the
+manifest, decrypts these secrets using its RSA private key, and uses the AES
+key + IV to decrypt the bundle itself.
+
+In addition to the EC2-facing AES key and IV, the manifest also contains a
+second copy of the key and IV, this time encrypted with the user's RSA public
+key. This permits users to download a bundle and decrpyt it again at some
+point in the future, provided they still have that RSA key.
+
+Finally, the manifest includes a signature, in which the user's RSA private
+key signs most of the manifest. Amazon has no way to verify this signature;
+it's there purely for the user's benefit, so that the user may download and
+verify the manifest's signature using the user's RSA key.
+
+So: if you do not need to decrypt your own bundles, and you do not need to
+validate your own manifest signatures, then you do not need to provide an RSA
+key.
+
+If you _do_ need to do these things, then you still don't need to use an
+Amazon-related X.509 certificate or private key. You can use any RSA key of
+your choosing.
+
+Manifests and Regions
+---------------------
+
+Note that unlike bundles, bundle _manifests_ are specific to particular AWS
+regions – or at least they can be. Amazon uses one RSA keypair to decrypt
+manifests in most regions, but they use a different keypair in `us-gov-west-1`
+and `cn-north-1`.
+
+If you're targeting multiple regions, you may find it advantageous to
+distribute the same bundle to all regions and to generate and register
+region-specific manifests, versus the alternatives of bundling multiple times
+or using `ec2:CopyImage`. In that case, just `WriteManifest()` repeatedly
+for the same `aws_bundle.Writer` using different `Sink`s.
