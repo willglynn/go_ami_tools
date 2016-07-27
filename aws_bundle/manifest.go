@@ -24,8 +24,6 @@ type manifestMachineConfig struct {
 	Architecture string `xml:"architecture"`
 
 	BlockDeviceMappings []BlockDeviceMapping `xml:"block_device_mapping>mapping"`
-
-	ProductCodes []string `xml:"product_codes>product_code,omitempty"`
 }
 
 type manifestImage struct {

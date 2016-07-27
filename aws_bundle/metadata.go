@@ -17,14 +17,14 @@ type Metadata struct {
 	Bundler Application
 
 	BlockDeviceMappings []BlockDeviceMapping
-	ProductCodes        []string
 }
 
 type Application struct {
-	Name    string `xml:"name"`
-	Version string `xml:"version"`
-	Release string `xml:"release"`
-	Comment string `xml:"comment,omitempty"`
+	Name    string `xml:"name"`    // e.g. "ec2-ami-tools"
+	Version string `xml:"version"` // e.g. "1.5"
+	Release string `xml:"release"` // e.g. "7"
+
+	Comment string `xml:",comment"` // optional XML comment
 }
 
 type BlockDeviceMapping struct {
@@ -38,7 +38,6 @@ func (md Metadata) toManifest() manifest {
 		MachineConfiguration: manifestMachineConfig{
 			Architecture:        md.Architecture,
 			BlockDeviceMappings: md.BlockDeviceMappings,
-			ProductCodes:        md.ProductCodes,
 		},
 		Image: manifestImage{
 			Name: md.Name,
