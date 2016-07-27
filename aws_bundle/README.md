@@ -4,7 +4,7 @@
 Using `ec2-ami-tools` is a pain. This package may ease your pain.
 
 There are two conventional ways to produce an instance store AMI:
-`ec2-bundle-vol` which asks an EC2 instance to bundles itself for use as
+`ec2-bundle-vol` which asks an EC2 instance to bundle itself for use as
 an AMI, and `ec2-bundle-image` which takes a disk image and bundles it for
 use as an AMI. In either case, you end up with a bunch of files on disk which
 you then pass to `ec2-upload-bundle`, which gives you a manifest URL which you
@@ -20,12 +20,28 @@ Creating an instance store image does _not_ require an X.509 signing
 certificate. (That's `ec2-ami-tools` talking.) All you need is regular AWS
 credentials with `s3:PutObject` and `ec2:RegisterImage` access.
 
+The Process
+-----------
+
+Generating an instance store AMI requires:
+
+* Making a disk image. `ec2-bundle-vol` does this by `mount -o loop`, copying
+  everything, and then `umount`ing. `ec2-bundle-image` assumes you did this
+  yourself.
+* Turning that disk image into a bundle. Both `ec2-bundle-*` tools do this.
+* Uploading the bundle to S3 with `x-amz-acl: aws-exec-read`.
+* Registering the bundle manifest with EC2.
+
+There are many tools to make disk images, and many SDKs to upload files to S3
+and register manifests with EC2. There are not many ways to turn disk images
+to bundles – especially none that are pure Go – which is why this code exists.
+
 Usage
 -----
 
 The `aws_bundle` package attemps to accomodate as many use cases as possible.
-It therefore has no dependencies on the AWS SDK, and it makes no use of the
-network.
+It therefore has no dependencies on the AWS SDK, it makes no use of the
+network, and there's no reason at all it would need to run inside EC2.
 
 Implement the `aws_bundle.Sink` interface to handle the bundle output. You can
 write the results to disk, or stream them straight to S3, or whatever you like,
@@ -66,7 +82,7 @@ key + IV to decrypt the bundle itself.
 
 In addition to the EC2-facing AES key and IV, the manifest also contains a
 second copy of the key and IV, this time encrypted with the user's RSA public
-key. This permits users to download a bundle and decrpyt it again at some
+key. This permits users to download a bundle and decrypt it again at some
 point in the future, provided they still have that RSA key.
 
 Finally, the manifest includes a signature, in which the user's RSA private
