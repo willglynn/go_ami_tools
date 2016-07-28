@@ -58,7 +58,7 @@ instance with an appropriate IAM profile.
 Usage requires the following AWS permissions:
 
 	s3:PutObject           to upload the bundle
-	s3:GetBucketLocaion    (if -region is unspecified)
+	s3:GetBucketLocation   (if -region is unspecified)
 	sts:GetCallerIdentity  (if -account is unspecified)
 
 `)
