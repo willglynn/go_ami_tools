@@ -63,7 +63,7 @@ it, `Close()`. Easy.
    * a `sink` to which the `Writer` should write
 
 In order to use the bundle, you'll also need a manifest file. Manifests contain
-various metadata, like the name of the image, its description, its owner, etc.
+various metadata, like the machine's architecture, the image's owner, etc.
 Fill out an `aws_bundle.Metadata` structure as appropriate and call
 `WriteManifest()`, providing both the closed `aws_bundle.Writer` and a `sink`.
 
@@ -102,12 +102,12 @@ Manifests and Regions
 ---------------------
 
 Note that unlike bundles, bundle _manifests_ are specific to particular AWS
-regions – or at least they can be. Amazon uses one RSA keypair to decrypt
-manifests in most regions, but they use a different keypair in `us-gov-west-1`
-and `cn-north-1`.
+regions – or at least they can be. Amazon uses one RSA key to decrypt
+manifests in most regions, but they use a different key in `us-gov-west-1` and
+`cn-north-1`.
 
-If you're targeting multiple regions, you may find it advantageous to
-distribute the same bundle to all regions and to generate and register
-region-specific manifests, versus the alternatives of bundling multiple times
-or using `ec2:CopyImage`. In that case, just `WriteManifest()` repeatedly
-for the same `aws_bundle.Writer` using different `Sink`s.
+If you're targeting multiple regions with different keys, you may find it
+advantageous to distribute the same bundle to all regions and to generate and
+register region-specific manifests, versus the alternatives of bundling
+multiple times or using `ec2:CopyImage`. You can generate multiple manifests
+for the same bundle by calling `WriteManifest()` repeatedly.
