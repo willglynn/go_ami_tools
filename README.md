@@ -1,4 +1,4 @@
-`go_ami_tools`
+`go_ami_tools` [![Build Status](https://travis-ci.org/willglynn/go_ami_tools.svg?branch=master)](https://travis-ci.org/willglynn/go_ami_tools)
 ==============
 
 This repo contains code that can generate instance store AMIs.
