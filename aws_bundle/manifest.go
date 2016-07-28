@@ -22,8 +22,6 @@ type manifestMachineConfig struct {
 	XMLName xml.Name `xml:"machine_configuration"`
 
 	Architecture string `xml:"architecture"`
-
-	BlockDeviceMappings []BlockDeviceMapping `xml:"block_device_mapping>mapping"`
 }
 
 type manifestImage struct {

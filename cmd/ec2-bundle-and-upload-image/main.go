@@ -291,12 +291,6 @@ func main() {
 			Version: "0.1",
 			Release: "1",
 		},
-
-		BlockDeviceMappings: []aws_bundle.BlockDeviceMapping{
-			{"ami", "sda"},
-			{"root", "/dev/xvda"},
-			{"ephemeral0", "sdb"},
-		},
 	}
 
 	// turn it into a manifest
@@ -307,7 +301,8 @@ func main() {
 	// done!
 	manifestLocation := fmt.Sprintf("%s/%s%s.manifest.xml", config.bucket, config.prefix, config.name)
 	log.Printf("Bundle creation/upload complete.")
-	log.Printf("Register your new AMI using e.g. `aws ec2 register-image --name %q --image-location %s`", path.Base(config.image), manifestLocation)
+	log.Printf("Register your new AMI using e.g.:")
+	log.Printf("  `aws ec2 register-image --name %q --virtualization-type=hvm --block-device-mappings \"VirtualName=ami,DeviceName=sda VirtualName=ephemeral0,DeviceName=sdb\" --root-device=/dev/xvda --image-location %s`", path.Base(config.image), manifestLocation)
 	log.Printf("Printing image location to standard output and terminating\n")
 	fmt.Printf("%s\n", manifestLocation)
 }

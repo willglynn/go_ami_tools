@@ -15,8 +15,6 @@ type Metadata struct {
 	Type         string          // assumed to be "machine" if unspecified
 
 	Bundler Application
-
-	BlockDeviceMappings []BlockDeviceMapping
 }
 
 type Application struct {
@@ -27,17 +25,11 @@ type Application struct {
 	Comment string `xml:",comment"` // optional XML comment
 }
 
-type BlockDeviceMapping struct {
-	Virtual string `xml:"virtual"` // "ami", "ephemeral0", "root", etc.
-	Device  string `xml:"device"`  // "sda",
-}
-
 func (md Metadata) toManifest() manifest {
 	m := manifest{
 		Bundler: md.Bundler,
 		MachineConfiguration: manifestMachineConfig{
-			Architecture:        md.Architecture,
-			BlockDeviceMappings: md.BlockDeviceMappings,
+			Architecture: md.Architecture,
 		},
 		Image: manifestImage{
 			Name: md.Name,
